@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>كشف حضور الطالبات</title>
+<style>
+  :root{
+    --primary:#1f4e79;
+    --secondary:#2f7d57;
+    --panel:#ffffff;
+    --border:#000000;
+    --weekend:#555555;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Tahoma, Arial, sans-serif;
+    background:#f5f5f5;
+    color:#111;
+    padding:4px;
+  }
+  .page{
+    max-width:none;
+    margin:0 auto;
+    background:#fff;
+    border:1px solid #d9d9d9;
+  }
+  .screen-tools{
+    padding:12px;
+    border-bottom:1px solid #ddd;
+    background:#f8fbff;
+    display:grid;
+    grid-template-columns:repeat(7, minmax(130px,1fr));
+    gap:10px;
+    align-items:end;
+  }
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:700;
+    margin-bottom:6px;
+    color:#555;
+  }
+  select,input,button{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid #cfd8e3;
+    border-radius:8px;
+    font-size:14px;
+    background:#fff;
+  }
+  input[type="file"]{
+    padding:7px;
+  }
+  button{
+    border:none;
+    background:linear-gradient(135deg,var(--primary),var(--secondary));
+    color:#fff;
+    cursor:pointer;
+    font-weight:700;
+  }
+  .screen-note{
+    padding:10px 12px 0;
+    color:#666;
+    font-size:13px;
+  }
+  .table-wrap{
+    overflow:auto;
+    padding:0;
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    background:#fff;
+  }
+  th,td{
+    border:1px solid var(--border);
+    text-align:center;
+    vertical-align:middle;
+    padding:0;
+    font-size:12px;
+  }
+  thead th{
+    background:#e6eef6;
+    font-weight:700;
+  }
+  .seq-col{width:48px; min-width:48px; max-width:48px;}
+  .name-col{width:360px; min-width:360px; max-width:360px;}
+  .day-col{width:42px; min-width:42px; max-width:42px;}
+  .name-cell{
+    text-align:right;
+    padding:7px 10px;
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .day-head{
+    padding:4px 2px;
+    line-height:1.2;
+  }
+  .day-head .num{
+    display:block;
+    font-size:15px;
+    font-weight:700;
+    margin-bottom:2px;
+  }
+  .day-head .month{
+    display:block;
+    font-size:11px;
+  }
+  .day-head .weekday{
+    display:block;
+    font-size:10px;
+    margin-top:2px;
+  }
+  .att-box{
+    width:100%;
+    min-height:32px;
+    border:none;
+    background:transparent;
+    text-align:center;
+    font-size:12px;
+    font-family:Tahoma, Arial, sans-serif;
+  }
+  .att-box:focus{
+    outline:2px solid rgba(31,78,121,.18);
+    background:#f7fbff;
+  }
+  .weekend{
+    background:var(--weekend) !important;
+    color:#fff !important;
+  }
+  .weekend .att-box{
+    color:#fff;
+  }
+  .status{
+    padding:8px 12px 12px;
+    color:#0f5132;
+    font-size:13px;
+    display:none;
+  }
+  .status.error{
+    color:#842029;
+  }
+
+  @media (max-width:1400px){
+    .screen-tools{grid-template-columns:1fr 1fr 1fr;}
+  }
+
+  @media print{
+    @page{size:landscape; margin:4mm;}
+    html,body{
+      margin:0 !important;
+      padding:0 !important;
+      background:#fff !important;
+      width:100%;
+      height:auto;
+    }
+    .page{
+      max-width:none;
+      width:100%;
+      border:none;
+      margin:0;
+    }
+    .screen-tools,.screen-note,.status{
+      display:none !important;
+    }
+    .table-wrap{
+      overflow:visible !important;
+      padding:0 !important;
+      margin:0 !important;
+      width:100%;
+    }
+    table{
+      width:100%;
+      table-layout:fixed;
+      margin:0;
+    }
+    th,td{
+      font-size:7.5pt;
+      padding:0;
+      border:.5pt solid #000;
+    }
+    .seq-col{width:28px !important; min-width:28px !important; max-width:28px !important;}
+    .name-col{width:210px !important; min-width:210px !important; max-width:210px !important;}
+    .day-col{width:22px !important; min-width:22px !important; max-width:22px !important;}
+    .name-cell{padding:3px 5px; font-size:7.5pt;}
+    .day-head{padding:2px 1px;}
+    .day-head .num{font-size:8.5pt; margin-bottom:1px;}
+    .day-head .month,.day-head .weekday{font-size:6pt;}
+    .att-box{min-height:22px; font-size:7pt;}
+    *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="screen-tools">
+      <div class="field">
+        <label>السنة الهجرية</label>
+        <input id="yearInput" type="number" value="1447" min="1400" max="1600">
+      </div>
+      <div class="field">
+        <label>الشهر الهجري</label>
+        <select id="monthSelect">
+          <option value="1">1 - محرم</option>
+          <option value="2">2 - صفر</option>
+          <option value="3">3 - ربيع الأول</option>
+          <option value="4">4 - ربيع الآخر</option>
+          <option value="5">5 - جمادى الأولى</option>
+          <option value="6">6 - جمادى الآخرة</option>
+          <option value="7">7 - رجب</option>
+          <option value="8">8 - شعبان</option>
+          <option value="9">9 - رمضان</option>
+          <option value="10" selected>10 - شوال</option>
+          <option value="11">11 - ذو القعدة</option>
+          <option value="12">12 - ذو الحجة</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>عدد الأيام</label>
+        <input id="daysCount" type="number" value="30" readonly>
+      </div>
+      <div class="field">
+        <label>ملف Excel للأسماء</label>
+        <input id="excelFile" type="file" accept=".xlsx,.xls,.csv">
+      </div>
+      <div class="field">
+        <label>عمود الأسماء</label>
+        <input id="nameColumn" type="text" value="اسم الطالبة" placeholder="اسم الطالبة أو A">
+      </div>
+      <div class="field">
+        <label>تحميل الأسماء</label>
+        <button onclick="loadStudentsFromExcel()">تحميل من Excel</button>
+      </div>
+      <div class="field">
+        <label>طباعة</label>
+        <button onclick="window.print()">طباعة</button>
+      </div>
+    </div>
+
+    <div class="screen-note">
+      يمكنك تحميل أسماء الطالبات من ملف Excel. إذا لم يجد العمود المحدد بالاسم، سيحاول استخدام العمود A أو أول عمود.
+      كما تم ضبط تمييز يومي <b>الجمعة</b> و<b>السبت</b> بدقة باستخدام تقويم <b>أم القرى</b>.
+    </div>
+
+    <div id="statusBox" class="status"></div>
+
+    <div class="table-wrap">
+      <table id="attendanceTable"></table>
+    </div>
+  </div>
+
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script>
+  let students = [
+      "الماس بنت مبيريك بن عون ذوي حسين السلمي",
+      "ايلاف بنت طلال بن لافي الثقفي",
+      "ايناس بنت محمد بن سعد الشهري",
+      "تالا بنت عبده بن طالع باشوت",
+      "جنى بنت عواض بن شداد المطردي السلمي",
+      "جوانا بنت بدر بن راشد السهلي الحربي",
+      "جود بنت سعيد بن سالمين الصيعري",
+      "جود ساير مطر السلمي",
+      "جوري بن ناعم بن صالح الهميعي السلمي",
+      "جوري بنت صالح بن محمد جريبي قيسي",
+      "خديجه سعيدبن خميس بن عبدالله هلابي",
+      "دانه بنت سامي بن دخيل الله اللبيني السلمي",
+      "دانية بنت عبيد بن عابد المطردي السلمي",
+      "رانيه بنت عبدالله بن صالج مخرب الغامدي",
+      "رسيل بنت عوض بن عطيه الله آل كريدم الزبيدي",
+      "رسيل عطيه محمدصالح الحربي",
+      "رغد عبيد بن عبدالله المطيري",
+      "رهف بنت عبدالله ابن منصور آل مبارك الغامدي",
+      "ريتال بنت فائز بن مرشود الصبحي الحربي",
+      "ريما بنت سعيد بن يحيى الغامدي",
+      "ريماس بنت محمد بن راجس الحقباني دوسري",
+      "سدن بنت احمد بن رجب الحاوي الزهراني",
+      "سديم بنت سلطان بن محمد آل مسرع العامري",
+      "شهد بنت خلف بن حضيض القويعي السلمي",
+      "شهد بنت علي بن محمد الصلبي",
+      "طيف بنت سعد بن علي الحسني الزهراني",
+      "غلا بنت منصور بن عبدالله آل فهران الشمراني",
+      "فجر بنت بندر ابن سالم آل حمود الغامدي",
+      "لانا بنت عبدالله بن رجاء الله المطردي السلمي",
+      "لمى بنت راشد بن حامد السهلي الحربي",
+      "لولوه بنت عبدالله بن محمد الهذيلي البقمي",
+      "ليان بنت ياسر بن سعد العلوني الجهني",
+      "ملك بنت فهد بن شباب الروقي العتيبي",
+      "همس بنت سعيد بن احمد آل شرف اليامي"
+  ];
+
+  const hijriMonths = {
+    1:"محرم",2:"صفر",3:"ربيع الأول",4:"ربيع الآخر",5:"جمادى الأولى",6:"جمادى الآخرة",
+    7:"رجب",8:"شعبان",9:"رمضان",10:"شوال",11:"ذو القعدة",12:"ذو الحجة"
+  };
+
+  const weekdayNames = {
+    0:"الأحد",1:"الاثنين",2:"الثلاثاء",3:"الأربعاء",4:"الخميس",5:"الجمعة",6:"السبت"
+  };
+
+  function showStatus(message, isError=false){
+    const box = document.getElementById('statusBox');
+    box.textContent = message;
+    box.className = 'status' + (isError ? ' error' : '');
+    box.style.display = 'block';
+  }
+
+  function getHijriFormatter(locale='en') {
+    return new Intl.DateTimeFormat(locale + '-u-ca-islamic-umalqura', {
+      day:'numeric', month:'numeric', year:'numeric'
+    });
+  }
+
+  function getHijriParts(date) {
+    const parts = getHijriFormatter('en').formatToParts(date);
+    const out = {};
+    for (const p of parts) {
+      if (p.type === 'day') out.day = parseInt(p.value, 10);
+      if (p.type === 'month') out.month = parseInt(p.value, 10);
+      if (p.type === 'year') out.year = parseInt(p.value, 10);
+    }
+    return out;
+  }
+
+  function findGregorianForHijri(targetYear, targetMonth, targetDay) {
+    const start = new Date(Date.UTC(2024, 0, 1));
+    const end = new Date(Date.UTC(2028, 11, 31));
+
+    for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+      const parts = getHijriParts(d);
+      if (parts.year === targetYear && parts.month === targetMonth && parts.day === targetDay) {
+        return new Date(d);
+      }
+    }
+    return null;
+  }
+
+  function getMonthLength(hYear, hMonth) {
+    let count = 0;
+    for (let day = 1; day <= 30; day++) {
+      const g = findGregorianForHijri(hYear, hMonth, day);
+      if (g) count++;
+    }
+    return count;
+  }
+
+  function getDayInfo(hYear, hMonth, hDay) {
+    const g = findGregorianForHijri(hYear, hMonth, hDay);
+    if (!g) return null;
+    const weekday = g.getUTCDay();
+    return {
+      hijriDay: hDay,
+      weekdayIndex: weekday,
+      weekdayName: weekdayNames[weekday],
+      isWeekend: weekday === 5 || weekday === 6
+    };
+  }
+
+  function normalizeHeader(value){
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function getStudentsFromJson(rows, requestedColumn){
+    if(!rows || !rows.length) return [];
+    const wanted = normalizeHeader(requestedColumn);
+
+    // First: exact header match
+    if (wanted) {
+      const byHeader = rows
+        .map(r => {
+          for (const key of Object.keys(r || {})) {
+            if (normalizeHeader(key) === wanted) return String(r[key] || '').trim();
+          }
+          return '';
+        })
+        .filter(v => v);
+      if (byHeader.length) return byHeader;
+    }
+
+    // Second: Excel letter reference like A, B, C
+    if (/^[A-Z]+$/i.test((requestedColumn || '').trim())) {
+      const col = requestedColumn.trim().toUpperCase();
+      const values = rows.map(r => String((r && r[col]) || '').trim()).filter(v => v);
+      if (values.length) return values;
+    }
+
+    // Third: common Arabic/English headers
+    const commonHeaders = ['اسم الطالبة','اسم الطالب','الاسم','name','student name','student'];
+    for (const header of commonHeaders) {
+      const vals = rows.map(r => {
+        for (const key of Object.keys(r || {})) {
+          if (normalizeHeader(key) === normalizeHeader(header)) return String(r[key] || '').trim();
+        }
+        return '';
+      }).filter(v => v);
+      if (vals.length) return vals;
+    }
+
+    // Last: first non-empty value from first column
+    const firstRow = rows.find(r => r && Object.keys(r).length);
+    if (!firstRow) return [];
+    const firstKey = Object.keys(firstRow)[0];
+    return rows.map(r => String((r && r[firstKey]) || '').trim()).filter(v => v);
+  }
+
+  async function loadStudentsFromExcel(){
+    const fileInput = document.getElementById('excelFile');
+    const file = fileInput.files[0];
+    const requestedColumn = document.getElementById('nameColumn').value.trim();
+
+    if (!file) {
+      showStatus('اختر ملف Excel أولاً.', true);
+      return;
+    }
+
+    try {
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, { type: 'array' });
+      const firstSheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+      let imported = getStudentsFromJson(rows, requestedColumn);
+
+      // fallback: raw array mode if no headers exist
+      if (!imported.length) {
+        const arr = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+        const colRef = (requestedColumn || 'A').trim().toUpperCase();
+        let colIndex = 0;
+        if (/^[A-Z]+$/.test(colRef)) {
+          colIndex = XLSX.utils.decode_col(colRef);
+        }
+        imported = arr
+          .slice(1)
+          .map(r => String((r && r[colIndex]) || '').trim())
+          .filter(v => v);
+      }
+
+      // remove duplicates and obvious header rows
+      imported = imported
+        .filter(v => !['اسم الطالبة','اسم الطالب','الاسم','name','student name'].includes(normalizeHeader(v)))
+        .filter((v, i, a) => a.indexOf(v) === i);
+
+      if (!imported.length) {
+        showStatus('لم يتم العثور على أسماء في الملف. جرّب اسم عمود آخر مثل: اسم الطالبة أو A', true);
+        return;
+      }
+
+      students = imported;
+      buildTable();
+      showStatus(`تم تحميل ${students.length} اسم/أسماء من ملف Excel بنجاح ✅`);
+    } catch (err) {
+      console.error(err);
+      showStatus('حدث خطأ أثناء قراءة ملف Excel.', true);
+    }
+  }
+
+  function buildTable() {
+    const year = parseInt(document.getElementById('yearInput').value, 10) || 1447;
+    const month = parseInt(document.getElementById('monthSelect').value, 10) || 10;
+    const monthName = hijriMonths[month] || '';
+    const monthLength = getMonthLength(year, month) || 30;
+    document.getElementById('daysCount').value = monthLength;
+
+    const days = [];
+    for (let d = 1; d <= monthLength; d++) {
+      const info = getDayInfo(year, month, d);
+      if (info) days.push(info);
+    }
+
+    let html = '<thead><tr>';
+    html += '<th class="seq-col">م</th>';
+    html += '<th class="name-col">اسم الطالبة</th>';
+
+    for (const day of days) {
+      html += `<th class="day-col ${day.isWeekend ? 'weekend' : ''}">
+        <div class="day-head">
+          <span class="num">${day.hijriDay}</span>
+          <span class="month">${monthName}</span>
+          <span class="weekday">${day.weekdayName}</span>
+        </div>
+      </th>`;
+    }
+
+    html += '</tr></thead><tbody>';
+
+    students.forEach((name, i) => {
+      html += '<tr>';
+      html += `<td class="seq-col">${i+1}</td>`;
+      html += `<td class="name-col"><div class="name-cell">${name}</div></td>`;
+      for (const day of days) {
+        html += `<td class="day-col ${day.isWeekend ? 'weekend' : ''}"><input class="att-box" type="text"></td>`;
+      }
+      html += '</tr>';
+    });
+
+    html += '</tbody>';
+    document.getElementById('attendanceTable').innerHTML = html;
+  }
+
+  buildTable();
+</script>
+</body>
+</html>
